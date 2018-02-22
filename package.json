@@ -1,0 +1,14 @@
+{
+  "name": "@orchestra-platform/mqtt-manager",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/orchestra-platform/mqtt-manager.git"
+  },
+  "dependencies": {
+    "@orchestra-platform/logger": "^1.0.0",
+    "mqtt": "^2.15.3"
+  }
+}
