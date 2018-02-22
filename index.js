@@ -12,8 +12,9 @@ module.exports = class MqttManager {
         this._waitMessages = [];
 
         this._log = new Logger({
-            logLevel: logLevel
-        })
+            logLevel: logLevel,
+            name: 'MQTT Logger'
+        });
 
         this._mqttClient = mqtt.connect(host, { port });
         this.initialized = new Promise((resolve, reject) => {
