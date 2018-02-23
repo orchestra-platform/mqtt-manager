@@ -43,8 +43,6 @@ module.exports = class MqttManager {
 
 
     subscribe(channel, onMessageCallback) {
-        if (false === channel.startsWith('/'))
-            channel = '/' + channel;
         this._subscriptions.push({ channel, onMessageCallback });
         channel = channel + '/#';
         this._mqttClient.subscribe(channel);
