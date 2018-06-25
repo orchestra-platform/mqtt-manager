@@ -18,7 +18,7 @@ module.exports = class MqttManager {
 
         this._mqttClient = mqtt.connect(host, { port, username, password });
         this.initialized = new Promise((resolve, reject) => {
-            this._mqttClient.on('connect',  _ => {
+            this._mqttClient.on('connect', _ => {
                 this._log.i(this.constructor.name, 'connection', 'connected', host);
                 return resolve();
             });
@@ -42,6 +42,11 @@ module.exports = class MqttManager {
     }
 
 
+    /**
+     * Subscribe to a channel
+     * @param {String} channel 
+     * @param {Function} onMessageCallback 
+     */
     subscribe(channel, onMessageCallback) {
         this._subscriptions.push({ channel, onMessageCallback });
         channel = channel + '/#';
@@ -49,6 +54,11 @@ module.exports = class MqttManager {
     };
 
 
+    /**
+     * @param {String} topic 
+     * @param {Object} msg 
+     * @param {Object} options mqtt.publish options
+     */
     publish(topic, msg, options = {}) {
         return new Promise((resolve, reject) => {
             const message = JSON.stringify(msg);
@@ -61,6 +71,61 @@ module.exports = class MqttManager {
     }
 
 
+    /**
+     * @param {String} topic 
+     */
+    removeWaitMessage(topic) {
+        const waitMessage = this._waitMessages.find(x => x.topic == topic);
+        if (waitMessage) {
+            clearTimeout(waitMessage.timeout);
+            this._waitMessages = this._waitMessages.filter(x => x.topic !== topic);
+        }
+    }
+
+
+    /**
+     * @param {String} topic 
+     * @param {Number} [timeoutMillis=500000] 
+     */
+    waitMessage(topic, timeoutMillis = 500000) {
+        let resolveCallback, rejectCallback;
+        const promise = new Promise((resolve, reject) => {
+            resolveCallback = value => {
+                this.removeWaitMessage(topic);
+                resolve(value);
+            };
+            rejectCallback = err => {
+                this.removeWaitMessage(topic);
+                reject(err);
+            };;
+        });
+
+        // Check if there is already a wait for this topic
+        const waitMessage = this._waitMessages.find(wm => wm.topic == topic);
+        if (waitMessage) {
+            return Promise.reject('There is already a wait for this topic');
+        }
+
+        const timeout = setTimeout(_ => {
+            this.removeWaitMessage(topic);
+            rejectCallback('Timeout');
+        }, timeoutMillis);
+
+        this._waitMessages.push({
+            topic: topic,
+            timeout: timeout,
+            resolve: resolveCallback,
+            reject: rejectCallback
+        });
+
+        return promise;
+    }
+
+
+    /**
+     * @param {String} topic 
+     * @param {String} message 
+     */
     _handleMessage(topic, message) {
         const subscriptions = this._subscriptions
             .filter(s => topic.startsWith(s.channel) || s.channel == "#");
@@ -77,6 +142,13 @@ module.exports = class MqttManager {
         } catch (e) {
             msg = message.toString();
             throw new Error('Invalid msg (not a json)');
+        }
+
+        // Check for waitMessages
+        for (let i = 0; i < this._waitMessages.length; i++) {
+            if (topic.startsWith(this._waitMessages[i].topic)) {
+                this._waitMessages[i].resolve(msg);
+            }
         }
 
         for (let i = 0; i < this._subscriptions.length; i++) {
