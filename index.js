@@ -25,7 +25,6 @@ module.exports = class MqttManager {
         });
         this._mqttClient.on('reconnect', _ => {
             this._log.w(this.constructor.name, 'connection', 'reconnect', host);
-            this._subscriptions.forEach(sub => this._mqttClient.subscribe(sub.channel));
         });
         this._mqttClient.on('close', _ => {
             this._log.e(this.constructor.name, 'connection', 'close', host);
