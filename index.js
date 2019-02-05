@@ -5,7 +5,7 @@ const Logger = require('@orchestra-platform/logger');
 module.exports = class MqttManager {
 
     constructor(options = {}) {
-        const { host, port = 1883, logLevel = Logger.LOG_LEVELS.WARN, username, password } = options;
+        const { host, port = 1883, logLevel = Logger.LOG_LEVELS.WARN, username, password, clientId } = options;
 
         this.initialized = false;
         this._subscriptions = [];
@@ -16,7 +16,7 @@ module.exports = class MqttManager {
             name: 'MQTT Logger'
         });
 
-        this._mqttClient = mqtt.connect(host, { port, username, password });
+        this._mqttClient = mqtt.connect(host, { port, username, password, clientId });
         this.initialized = new Promise((resolve, reject) => {
             this._mqttClient.on('connect', _ => {
                 this._log.i(this.constructor.name, 'connection', 'connected', host);
