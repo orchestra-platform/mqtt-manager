@@ -45,11 +45,15 @@ module.exports = class MqttManager {
      * Subscribe to a channel
      * @param {String} channel 
      * @param {Function} onMessageCallback 
+     * @param {Object} [options] additional properties passed to mqtt.subscribe
+     * @param {Object} [options.qos=1] 
      */
-    subscribe(channel, onMessageCallback) {
+    subscribe(channel, onMessageCallback, options = {}) {
+        if (undefined === options.qos)
+            options.qos = 1;
         this._subscriptions.push({ channel, onMessageCallback });
         channel = channel + '/#';
-        this._mqttClient.subscribe(channel);
+        this._mqttClient.subscribe(channel, options);
     };
 
 
